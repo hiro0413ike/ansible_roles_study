@@ -1,0 +1,37 @@
+---
+- name: check file the mariadb repository
+  stat:
+    path: "/etc/yum.repo.d/mariadb.repo"
+  register: mariadb_repo_result
+
+- name: MariaDB setup with specified version "{{ db.mariadb.version }}"
+  shell: curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --mariadb-server-version=mariadb-{{ db.mariadb.version }}
+  when: mariadb_repo_result.stat.exists == false
+
+- name: install mariadb components
+  yum:
+    name: "{{ db.mariadb.Components }}"
+    state: present
+  notify: restart mariadb
+
+- name: check install mysql-python
+  shell: "find / -type d -name *MySQL-python*"
+  check_mode: no
+  register: mysql_python_result
+  notify: restart mariadb
+
+- name: create db wordpress
+  mysql_db:
+    name: "{{ db.db_name }}"
+    state: present
+  when: mysql_python_result.stdout != ""
+
+- name: create db user
+  no_log: true
+  mysql_user:
+    user: "{{ db.user_name }}"
+    password: "{{ db.password }}"
+    priv: 'wordpress.*:ALL,GRANT'
+    state: present
+    host: "{{ db.connection_sorce_ip }}"
+  when: mysql_python_result.stdout != ""

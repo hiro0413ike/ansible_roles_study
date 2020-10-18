@@ -1,0 +1,6 @@
+---
+- name: Wordpress build web server
+  import_playbook: wordpress_web.yml
+
+- name: Wordpress build db server
+  import_playbook: wordpress_db.yml

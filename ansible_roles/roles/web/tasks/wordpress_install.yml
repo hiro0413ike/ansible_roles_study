@@ -1,0 +1,55 @@
+---
+- name: install repo epel-release,remi-release-7
+  yum:
+    name: "{{ web.repositorys }}"
+    state: present
+
+- name: apache install
+  yum:
+   name: httpd 
+   state: latest
+   enablerepo: epel
+
+- name: wordpress pkg install
+  get_url:
+    url: "http://wordpress.org/latest.tar.gz"
+    dest: "/tmp/latest.tar.gz"
+
+- name: check install wprdpress pkg
+  stat:
+    path: "/tmp/latest.tar.gz"
+  register: pkg_result
+
+- name: unarchive wordpress pkg
+  unarchive:
+    src: /tmp/latest.tar.gz
+    dest: /var/www/html/
+    remote_src: yes
+  when: pkg_result.stat.exists == true
+
+- name: check wordpress directory
+  stat:
+    path: "/var/www/html/wordpress"
+  register: wordpress_result
+
+- name: chown wordpress directory
+  file:
+    path: /var/www/html/wordpress
+    owner: "apache"
+    group: "apache"
+    mode: "755"
+    recurse: yes
+  when: wordpress_result.stat.exists == true
+
+- name: check remi.repo
+  stat:
+    path: /etc/yum.repos.d/remi.repo
+  register: repo_result
+
+- name: install php version "{{ web.php.version }}"
+  yum:
+    name: "{{ web.php.packages }}"
+    state: latest
+    enablerepo: remi-php{{ web.php.version }}
+  when: repo_result.stat.exists == true
+  notify: restart httpd

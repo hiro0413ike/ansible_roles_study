@@ -1,0 +1,11 @@
+---
+db:
+  mariadb:
+    Components:
+      - mariadb-server
+      - MySQL-python
+    version: "10.1"
+  db_name: "wordpress"
+  user_name: "web_user"
+  password: "password"
+  connection_sorce_ip: "192.168.16.22"
